@@ -1,0 +1,87 @@
+<!DOCTYPE html>
+<html lang="id">
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>TabunganKu</title>
+    <style>
+        body { font-family: sans-serif; padding: 20px; background-color: #f4f4f9; margin: 0; }
+        input, select, button { width: 100%; padding: 12px; margin-bottom: 15px; box-sizing: border-box; border-radius: 6px; border: 1px solid #ccc; font-size: 16px;}
+        button { background-color: #28a745; color: white; border: none; font-weight: bold; cursor: pointer; }
+        .card { background: white; padding: 20px; margin-bottom: 20px; border-radius: 10px; box-shadow: 0 2px 5px rgba(0,0,0,0.1); text-align: center;}
+        .history-item { display: flex; justify-content: space-between; background: white; padding: 15px; border-bottom: 1px solid #eee; border-radius: 5px; margin-bottom: 10px; box-shadow: 0 1px 3px rgba(0,0,0,0.05); }
+        .pemasukan { color: #28a745; font-weight: bold; }
+        .pengeluaran { color: #dc3545; font-weight: bold; }
+    </style>
+</head>
+<body>
+    <div class="card">
+        <h2 style="margin: 0; color: #555;">Sisa Saldo</h2>
+        <h1 id="totalSaldo" style="margin: 10px 0 0 0; color: #333;">Rp 0</h1>
+    </div>
+
+    <form id="formKas">
+        <select id="tipe">
+            <option value="pemasukan">Pemasukan (+)</option>
+            <option value="pengeluaran">Pengeluaran (-)</option>
+        </select>
+        <input type="number" id="nominal" placeholder="Nominal (misal: 50000)" required>
+        <input type="text" id="keterangan" placeholder="Keterangan (misal: Beli makan)" required>
+        <button type="submit">Simpan Transaksi</button>
+    </form>
+
+    <h3 style="margin-top: 30px;">Riwayat Transaksi</h3>
+    <div id="listHistory"></div>
+
+    <script>
+        // Tarik data dari memori HP
+        let dataKas = JSON.parse(localStorage.getItem('dataTabungan')) || [];
+
+        function updateUI() {
+            let total = 0;
+            const listHistory = document.getElementById('listHistory');
+            listHistory.innerHTML = ''; // Kosongin list sebelum render ulang
+
+            // Render history dari yang terbaru (reverse)
+            [...dataKas].reverse().forEach(item => {
+                if (item.tipe === 'pemasukan') total += item.nominal;
+                if (item.tipe === 'pengeluaran') total -= item.nominal;
+
+                const div = document.createElement('div');
+                div.className = 'history-item';
+                div.innerHTML = `
+                    <span>${item.keterangan}</span>
+                    <span class="${item.tipe}">
+                        ${item.tipe === 'pemasukan' ? '+' : '-'} Rp ${item.nominal.toLocaleString('id-ID')}
+                    </span>
+                `;
+                listHistory.appendChild(div);
+            });
+
+            document.getElementById('totalSaldo').innerText = `Rp ${total.toLocaleString('id-ID')}`;
+        }
+
+        // Panggil saat pertama kali dibuka
+        updateUI();
+
+        document.getElementById('formKas').addEventListener('submit', function(e) {
+            e.preventDefault();
+
+            const transaksi = {
+                id: Date.now(),
+                tipe: document.getElementById('tipe').value,
+                nominal: parseInt(document.getElementById('nominal').value),
+                keterangan: document.getElementById('keterangan').value
+            };
+
+            // Push ke array dan simpan permanen
+            dataKas.push(transaksi);
+            localStorage.setItem('dataTabungan', JSON.stringify(dataKas));
+
+            // Reset form dan update UI
+            document.getElementById('formKas').reset();
+            updateUI();
+        });
+    </script>
+</body>
+</html>
